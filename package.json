@@ -1,0 +1,15 @@
+{
+  "name": "eman",
+  "version": "0.1.0",
+  "description": "event manager for services using websockets",
+  "main": "index.js",
+  "author": "alekzonder <alekzonder@gmail.com>",
+  "license": "MIT",
+  "dependencies": {
+    "express": "^4.13.3",
+    "lodash": "^3.10.1",
+    "log4js": "^0.6.27",
+    "moment": "^2.10.6",
+    "socket.io": "^1.3.7"
+  }
+}
