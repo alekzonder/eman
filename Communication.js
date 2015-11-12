@@ -1,5 +1,4 @@
-"use strict";
-
+'use strict';
 var _ = require('lodash');
 
 class Communication {
@@ -95,7 +94,7 @@ class Communication {
 
                     socket.disconnect();
 
-                    reject(new Error('invalid secret key for ' + fromIp, 'invalid_secret_key'))
+                    reject(new Error('invalid secret key for ' + fromIp, 'invalid_secret_key'));
                     return;
                 }
 

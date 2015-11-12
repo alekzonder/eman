@@ -1,10 +1,13 @@
 {
   "name": "eman",
   "version": "0.1.0",
-  "description": "event manager for services using websockets",
+  "description": "Event Manager for communication between services using WebSockets",
   "main": "index.js",
   "author": "alekzonder <alekzonder@gmail.com>",
   "license": "MIT",
+  "publishConfig": {
+     "registry": "http://registry.npmjs.org/"
+   },
   "dependencies": {
     "express": "^4.13.3",
     "lodash": "^3.10.1",

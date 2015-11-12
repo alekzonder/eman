@@ -1,6 +1,6 @@
 # eman
 
-Event Manager for services using WebSockets
+Event Manager for communication between services using WebSockets
 
 # dependencies
 
