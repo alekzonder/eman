@@ -10,7 +10,7 @@ var server = require('http').createServer(app);
 var Logger = require('log4js');
 var EventEmitter = require('events').EventEmitter;
 
-var Communication = require('./Communication');
+var Eman = require('./src/Eman');
 
 var config = {
     port: process.env.PORT || 9001
@@ -25,6 +25,8 @@ io.on('connection', function (socket) {
     console.log('new');
 });
 
+var eman = new Eman(logger, io, events);
+
 app.get('/', (req, res) => {
     res.json({
         result: {
@@ -33,8 +35,12 @@ app.get('/', (req, res) => {
     });
 });
 
+app.get('/services', (req, res) => {
+    res.json({
+        result: eman.getServiceInfo()
+    });
+});
+
 server.listen(config.port, function (s) {
     logger.info('listen on ' + config.port);
 });
-
-var comChannel = new Communication(logger, io, events);

@@ -1,7 +1,8 @@
 'use strict';
 var _ = require('lodash');
+var Services = require('./Services');
 
-class Communication {
+class Eman {
 
     constructor(logger, io, events) {
 
@@ -13,7 +14,7 @@ class Communication {
 
         this._channel = this._io.of('/communication');
 
-        this._services = {};
+        this._services = new Services();
 
         this._config = {
             handshake_timeout: 2000
@@ -22,9 +23,15 @@ class Communication {
         this._initIo();
     }
 
+    getServiceInfo() {
+        return this._services.getInfo();
+    }
+
     _handshake(socket) {
 
         return new Promise((resolve, reject) => {
+
+            var startHandshakeTime = new Date().getTime();
 
             var fromIp = socket.handshake.address;
 
@@ -100,14 +107,9 @@ class Communication {
 
                 serviceId = this._generateServiceId(service);
 
-                socketService = {
-                    id: serviceId,
-                    name: service.name
-                };
+                socketService = this._services.createNewService(serviceId, service.name);
 
-                this._services[serviceId] = socketService;
-
-                socket.serviceId = serviceId;
+                socketService.setSocket(socket);
 
                 this._logger.trace(`${fromIp} <= shake_id`, serviceId);
 
@@ -160,9 +162,19 @@ class Communication {
 
                 this._logger.trace(`${fromIp} <= shake_online`);
 
-                socket.emit('shake_online');
+                // handshake success
+                var endHandshakeTime = new Date().getTime();
+                this._logger.debug('handshake done in ' + (endHandshakeTime - startHandshakeTime) + ' ms');
 
-                resolve(socketService);
+                this._setupService(socketService)
+                    .then(() => {
+                        socket.emit('shake_online');
+                        resolve(socketService);
+                    })
+                    .catch((error) => {
+                        this._logger.error(error);
+                    });
+
             });
 
             this._logger.trace(`${fromIp} <= shake_who`);
@@ -189,23 +201,15 @@ class Communication {
 
                 if (socket.serviceId) {
                     serviceId = socket.serviceId;
-                }
-
-                if (socket.serviceId) {
-                    delete this._services[socket.serviceId];
+                    this._services.removeService(serviceId);
                 }
 
                 this._logger.info(`service id="${serviceId}" disconnect`);
             });
 
-            var startHandshakeTime = new Date().getTime();
-
             this._handshake(socket)
                 .then((service) => {
-                    // handshake success
-                    var endHandshakeTime = new Date().getTime();
-                    this._logger.debug('handshake done in ' + (endHandshakeTime - startHandshakeTime) + ' ms');
-                    this._setupService(service, socket);
+                    this._logger.debug('handshake done, service online');
                 })
                 .catch((error) => {
                     this._logger.error(error);
@@ -213,26 +217,67 @@ class Communication {
         });
     }
 
-    _setupService(service, socket) {
+    _setupService(service) {
 
-        this._services[service.id] = service;
-        this._services[service.id].socket = socket;
+        return new Promise((resolve, reject) => {
+            var socket = service.getSocket();
 
-        // подписываемся на события от сервиса
+            console.log('!!!!!!!!!!!!!!!!', socket.id);
 
-        socket.on('api:request', (event) => {
-            this._processApiRequest(event, service);
+            var serviceId = service.getId();
+
+            // подписываемся на события от сервиса
+
+            socket.on('api:request', (event) => {
+                this._processApiRequest(event, service);
+            });
+
+            socket.on('api:response', (event) => {
+                this._processApiResponse(event, service);
+            });
+
+            socket.on('_service:api:request:subscribe', (event) => {
+
+                this._logger.trace(`${serviceId} => _service:api:request:subscribe`, event);
+
+                if (!event.name)  {
+                    socket.emit('_service:error', {
+                        message: `No "name" in event data on '_service:api:request:subscribe'`,
+                        code: 'invalid_data_on_service:api:request:subscribe'
+                    });
+
+                    return;
+                }
+
+                // service.subscribed_events.push(event.name);
+                service.addListeningEvent(event.name);
+            });
+
+            socket.on('_service:api:request:unsubscribe', (event) => {
+
+                this._logger.trace(`${serviceId} => _service:api:request:unsubscribe`, event);
+
+                if (!event.name)  {
+                    socket.emit('_service:error', {
+                        message: `No "name" in event data on '_service:api:request:unsubscribe'`,
+                        code: 'invalid_data_on_service:api:request:unsubscribe'
+                    });
+
+                    return;
+                }
+
+                service.removeListeningEvent(event.name);
+
+            });
+
+            // join to request_flow room
+            socket.join('request_flow');
+
+            this._logger.info(`service id="${service.id}" online`);
+
+            resolve();
         });
 
-        socket.on('api:response', (event) => {
-            this._processApiResponse(event, service);
-        });
-
-        // join to request_flow room
-        socket.join('request_flow');
-        socket.join(service.id);
-
-        this._logger.info(`service id="${service.id}" online`);
     }
 
 
@@ -282,10 +327,9 @@ class Communication {
             return;
         }
 
-        // отправляем ответ непосредственно сервису который запрос сделал
-
-        // TODO уже есть комната для сокета конкретного ее создает socket.io по умолчанию
-        this._channel.to(event.sender_id).emit('api:response', event);
+        // send response to sender_id room, socket.io join every socket into room `${socket.id}`
+        //
+        this._channel.to(service.getSocket().id).emit('api:response', event);
     }
 
     _generateServiceId(service) {
@@ -293,4 +337,4 @@ class Communication {
     }
 }
 
-module.exports = Communication;
+module.exports = Eman;

@@ -80,6 +80,44 @@ Service make some startup actions and responds Eman about ready
 
 Eman reports Service that all done and Service in work
 
+### Service init
+
+1. After service got id (after `shake_id` stage), service subscribe on events from Eman
+
+2. After every subscribe for event service must emit event `_service:api:request:subscribe`
+
+```js
+{
+    name: 'messages.post'
+}
+```
+
+3. If service unsubscribe event, must emit `_service:api:request:unsubscribe`
+
+```js
+{
+    name: 'messages.post'
+}
+```
+
+
+### Service disconnect
+
+When service disconnect, Eman see socket disconnected - and clear all service data
+
+### Service error dispatch
+
+Service must subscribe on `_service:error` event
+
+#### error event format
+
+```js
+{
+	message: "human readable message",
+	code: "error_code"
+}
+```
+
 ### Send Request, Got Response
 
 For example, Service A want send message and got response, that message sent.
