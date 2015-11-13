@@ -1,6 +1,6 @@
 {
   "name": "eman",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Event Manager for communication between services using WebSockets",
   "main": "index.js",
   "author": "alekzonder <alekzonder@gmail.com>",
