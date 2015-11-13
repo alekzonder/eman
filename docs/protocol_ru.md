@@ -42,17 +42,9 @@
    		// имя сервиса
    		name: "test_service",
 
-   		// ключ для подтверждения
-   		// который знает eman
-   		key: 'secret_key',
+   		//
+   		key: 'secret_key'
 
-   		// список событий,
-   		// которые сервис будет принимать
-   		events: {
-   			"messages.post": {},
-   			"messages.find": {},
-   			"messages.get": {}
-   		}
    }
    ```
 
@@ -61,7 +53,7 @@
 	```js
 	{
 		error: {
-			message: "Invalid Secret key",
+			message: "Invalid key",
 			code: "invalid_key",
 			status: 400
 		}
@@ -199,7 +191,7 @@ eman, который может обрабатывать события
 			// Список ошибок
 			list: [
 				{
-					"message": "Ошибка сервера"
+					message: "Ошибка сервера"
 				}
 			]
 		}
